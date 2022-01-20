@@ -3,7 +3,7 @@ This file contains the logic for swedish person number generation
 */
 
 // Imports
-use rand::{Rng};
+use rand::Rng;
 use chrono::{NaiveDate, NaiveDateTime, Datelike, Timelike};
 
 pub fn generate_pn(age: i32) -> String{
@@ -16,53 +16,51 @@ pub fn generate_pn(age: i32) -> String{
     3. Last digit following the checksum calculation in
     https://en.wikipedia.org/wiki/Personal_identity_number_(Sweden)#Checksum
     */
+
     // Generating the date
-    let curr_timestamp = chrono::Local::now();
-    let curr_time = curr_timestamp.time();
-    let curr_date = curr_timestamp.date();
+    let current_timestamp = chrono::Local::now();
+    let current_time = current_timestamp.time();
+    let current_date = current_timestamp.date();
 
-    let time_date = NaiveDate::from_ymd(curr_date.year()-age, curr_date.month(),
-                                                    curr_date.day()).and_hms(curr_time.hour(),
-                                                    curr_time.minute(), curr_time.second());
+    let date_max = NaiveDate::from_ymd(current_date.year()-age, current_date.month(),
+                                                    current_date.day()).and_hms(current_time.hour(),
+                                                    current_time.minute(), current_time.second());
 
-    let mut rng = rand::thread_rng();
-    let rnd_tstamp: i64 = rng.gen_range(0..time_date.timestamp());
-    let rnd_date = NaiveDateTime::from_timestamp(rnd_tstamp, 0);
-    let mut rnd_formatted_date = rnd_date.format("%Y%m%d").to_string();
+    let mut random_number_generator = rand::thread_rng();
+    let random_timestamp: i64 = random_number_generator.gen_range(0..date_max.timestamp());
+
+    let random_date = NaiveDateTime::from_timestamp(random_timestamp, 0);
+    let mut random_formatted_date = random_date.format("%Y%m%d").to_string();
 
     // Generating the first 3 digits in the PN code
-    let frst_three_int: i32 = rng.gen_range(0..1000); //random number between 0 and 999
-    let mut frst_three_str: String = frst_three_int.to_string();
 
-    match frst_three_str.len() {
+    let mut leading_ints = random_number_generator.gen_range(0..1000).to_string();
+
+    match leading_ints.len() {
         1 => {
-            let filler = "00";
-            frst_three_str = [filler, &frst_three_str].concat();
+            leading_ints = ["00", &leading_ints].concat();
         },
         2 => {
-            let filler = "0";
-            frst_three_str = [filler, &frst_three_str].concat();
+            leading_ints = ["0", &leading_ints].concat();
         },
         _ => ()
     }
 
 
     // Generating the last digit in the PN code
-    let pn_known = [rnd_formatted_date.clone(), frst_three_str.clone()].concat();
+    let pn_known = format!("{}{}",random_formatted_date,leading_ints);
     let mut counter = 0;
-    let mut value: u32 = 0;
     let mut processed_value = 0;
     for char in pn_known[2..].chars() {
         counter += 1;
         if counter%2!=0{
-            value = 2 * char.to_digit(10).unwrap();
+            let value = 2 * char.to_digit(10).unwrap();
             if value > 9{
-                let str_value = value.to_string();
-                let mut sub_sum = 0;
-                for sub_char in str_value.chars() {
-                    sub_sum += sub_char.to_digit(10).unwrap();
+                let mut sum_of_numbers = 0;
+                for number in value.to_string().chars() {
+                    sum_of_numbers += number.to_digit(10).unwrap();
                 }
-                processed_value += sub_sum;
+                processed_value += sum_of_numbers;
                 continue;
             }
             processed_value += value;
@@ -72,11 +70,16 @@ pub fn generate_pn(age: i32) -> String{
         continue;
     }
 
-    let checksum_value = 10-processed_value.to_string().chars().last().unwrap().to_digit(10).unwrap();
-    rnd_formatted_date.push_str("-");
-    rnd_formatted_date.push_str(&frst_three_str);
-    rnd_formatted_date.push_str(&checksum_value.to_string());
+    // Calculatin checksum
+    let mut checksum = 10-(processed_value % 10);
+    if checksum == 10 {
+        checksum = 0;
+    }
+
+    random_formatted_date.push_str("-");
+    random_formatted_date.push_str(&leading_ints);
+    random_formatted_date.push_str(&checksum.to_string());
 
 
-    rnd_formatted_date
+    random_formatted_date
 }
