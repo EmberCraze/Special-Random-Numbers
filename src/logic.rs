@@ -32,20 +32,7 @@ pub fn generate_pn(age: i32) -> String{
     let random_date = NaiveDateTime::from_timestamp(random_timestamp, 0);
     let mut random_formatted_date = random_date.format("%Y%m%d").to_string();
 
-    // Generating the first 3 digits in the PN code
-
-    let mut leading_ints = random_number_generator.gen_range(0..1000).to_string();
-
-    match leading_ints.len() {
-        1 => {
-            leading_ints = ["00", &leading_ints].concat();
-        },
-        2 => {
-            leading_ints = ["0", &leading_ints].concat();
-        },
-        _ => ()
-    }
-
+    let leading_ints: String = generate_leading_digits(random_number_generator);
 
     // Generating the last digit in the PN code
     let pn_known = format!("{}{}",random_formatted_date,leading_ints);
@@ -82,4 +69,23 @@ pub fn generate_pn(age: i32) -> String{
 
 
     random_formatted_date
+}
+
+
+fn generate_leading_digits(mut random_number_generator: rand::rngs::ThreadRng) -> String {
+    
+    // Generating the first 3 digits in the PN code
+    let random_digits: &String = &random_number_generator.gen_range(0..1000).to_string();
+    let mut leading_ints: String = "".to_string();
+
+    match random_digits.len() {
+        1 => {
+            leading_ints = ["00", &random_digits].concat();
+        },
+        2 => {
+            leading_ints = ["0", &random_digits].concat();
+        },
+        _ => ()
+    }
+    leading_ints
 }
